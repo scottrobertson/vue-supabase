@@ -1,19 +1,38 @@
 'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
+
+const { inject, isVue3 } = require('vue-demi');
 
 const { createClient } = require('@supabase/supabase-js')
 
-module.exports = {
-  install: function (Vue, options) {
+const supabaseKey = 'supabase';
+
+function useSupabase(key = null) { 
+  return inject(key !== null ? key : supabaseKey);
+}
+
+
+exports['default'] = {
+  supabaseKey,
+  useSupabase,
+  install: function (app, options) {
     const supabase = createClient(options.supabaseUrl, options.supabaseKey, options.supabaseOptions)
 
-    Object.defineProperties(Vue.prototype, {
-      $supabase: {
-        get: function() {
-          return supabase;
-        },
-      },
-    });
+    app.provide(supabaseKey, supabase);
 
-    Vue.supabase = supabase;
+    if (isVue3){
+      app.config.globalProperties.$supabase = supabase;
+    } else {
+      Object.defineProperties(app.prototype, {
+        $supabase: {
+          get: function() {
+            return supabase;
+          },
+        },
+      });
+      app.supabase = supabase;
+    }
   }
 }
+
+module.exports = exports['default'];
